@@ -25,7 +25,7 @@ func toHexAmount(s string) string {
 // AddMarket adds a new market (admin). Returns market ID.
 func (o *Orders) AddMarket(base, quote, lot, tick string) (uint64, error) {
 	symbol := base + "-" + quote
-	result, err := o.provider.request("primeorders_addMarket", []interface{}{
+	result, err := o.provider.request("mersennetorders_addMarket", []interface{}{
 		symbol,
 		toHexAmount(tick),
 		toHexAmount(lot),
@@ -54,7 +54,7 @@ func (o *Orders) PlaceOrder(market uint64, side, price, amount, tif, owner strin
 		"size":      toHexAmount(amount),
 		"tif":       tif,
 	}
-	result, err := o.provider.request("primeorders_submitOrder", []interface{}{params})
+	result, err := o.provider.request("mersennetorders_submitOrder", []interface{}{params})
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (o *Orders) PlaceOrder(market uint64, side, price, amount, tif, owner strin
 
 // CancelOrder cancels an order by ID
 func (o *Orders) CancelOrder(orderID uint64) (bool, error) {
-	result, err := o.provider.request("primeorders_cancelOrder", []interface{}{
+	result, err := o.provider.request("mersennetorders_cancelOrder", []interface{}{
 		fmt.Sprintf("0x%x", orderID),
 	})
 	if err != nil {
@@ -82,7 +82,7 @@ func (o *Orders) CancelOrder(orderID uint64) (bool, error) {
 
 // GetOrderBook returns the order book for a market
 func (o *Orders) GetOrderBook(market uint64) (*OrderBook, error) {
-	result, err := o.provider.request("primeorders_getOrderBook", []interface{}{
+	result, err := o.provider.request("mersennetorders_getOrderBook", []interface{}{
 		fmt.Sprintf("0x%x", market),
 	})
 	if err != nil {

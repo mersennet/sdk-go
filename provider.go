@@ -227,7 +227,7 @@ func (p *Provider) BlockNumber() (uint64, error) {
 	return n, nil
 }
 
-// ViewNotes returns grant-gated encrypted notes from prime_viewNotes.
+// ViewNotes returns grant-gated encrypted notes from mersennet_viewNotes.
 func (p *Provider) ViewNotes(grantID string, limit *int, cursorHex *string) (*ViewNotesResult, error) {
 	request := map[string]interface{}{
 		"grantIdHex": grantID,
@@ -238,7 +238,7 @@ func (p *Provider) ViewNotes(grantID string, limit *int, cursorHex *string) (*Vi
 	if cursorHex != nil && *cursorHex != "" {
 		request["cursorHex"] = *cursorHex
 	}
-	result, err := p.request("prime_viewNotes", []interface{}{request})
+	result, err := p.request("mersennet_viewNotes", []interface{}{request})
 	if err != nil {
 		return nil, err
 	}

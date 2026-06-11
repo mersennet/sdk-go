@@ -1,6 +1,5 @@
 package main
 
-
 import (
 	"bytes"
 	"crypto/sha256"
@@ -13,7 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	mersennet "github.com/PrimeNumbersLabs/prime-chain-sdk-go"
+	mersennet "github.com/Mersennet/mersennet-chain-sdk-go"
 )
 
 const (
@@ -37,13 +36,13 @@ func main() {
 			"jsonrpc": "2.0",
 			"id":      request["id"],
 			"result": map[string]any{
-				"grantId":                  grantIDHex,
-				"grantorCommitment":        repeatedHex('7'),
-				"blockNumber":              42,
-				"shieldedStateRoot":        repeatedHex('8'),
-				"totalEncryptedNoteCount":  1,
+				"grantId":                    grantIDHex,
+				"grantorCommitment":          repeatedHex('7'),
+				"blockNumber":                42,
+				"shieldedStateRoot":          repeatedHex('8'),
+				"totalEncryptedNoteCount":    1,
 				"returnedEncryptedNoteCount": 1,
-				"nextCursor":               nil,
+				"nextCursor":                 nil,
 				"notes": []map[string]any{{
 					"noteCommitment": repeatedHex('9'),
 					"encryptedNote":  encryptedNoteHex,

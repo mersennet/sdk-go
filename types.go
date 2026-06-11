@@ -2,14 +2,14 @@ package mersennet
 
 // Block represents block data from eth_getBlockByNumber / eth_getBlockByHash
 type Block struct {
-	Number        string        `json:"number"`
-	Hash          string        `json:"hash"`
-	GasLimit      string        `json:"gas_limit"`
-	GasUsed       string        `json:"gas_used"`
-	BaseFee       string        `json:"base_fee"`
-	StateRoot     string        `json:"state_root"`
-	Transactions  []interface{} `json:"transactions"`
-	DomainEvents  []interface{} `json:"domain_events,omitempty"`
+	Number       string        `json:"number"`
+	Hash         string        `json:"hash"`
+	GasLimit     string        `json:"gas_limit"`
+	GasUsed      string        `json:"gas_used"`
+	BaseFee      string        `json:"base_fee"`
+	StateRoot    string        `json:"state_root"`
+	Transactions []interface{} `json:"transactions"`
+	DomainEvents []interface{} `json:"domain_events,omitempty"`
 }
 
 // Transaction represents transaction data
@@ -26,14 +26,14 @@ type Transaction struct {
 
 // Receipt represents a transaction receipt
 type Receipt struct {
-	TransactionHash  string   `json:"transaction_hash"`
-	BlockHash        string   `json:"block_hash"`
-	BlockNumber      string   `json:"block_number"`
-	TransactionIndex string   `json:"transaction_index"`
-	GasUsed          string   `json:"gas_used"`
-	Status           string   `json:"status"`
-	ContractAddress  *string  `json:"contract_address"`
-	Output           string   `json:"output"`
+	TransactionHash  string     `json:"transaction_hash"`
+	BlockHash        string     `json:"block_hash"`
+	BlockNumber      string     `json:"block_number"`
+	TransactionIndex string     `json:"transaction_index"`
+	GasUsed          string     `json:"gas_used"`
+	Status           string     `json:"status"`
+	ContractAddress  *string    `json:"contract_address"`
+	Output           string     `json:"output"`
 	Logs             []LogEntry `json:"logs"`
 }
 
@@ -82,21 +82,21 @@ type Trade struct {
 	Size     string `json:"size"`
 }
 
-// ViewNotesEntry represents one encrypted note returned by prime_viewNotes.
+// ViewNotesEntry represents one encrypted note returned by mersennet_viewNotes.
 type ViewNotesEntry struct {
 	NoteCommitment string `json:"noteCommitment"`
 	EncryptedNote  string `json:"encryptedNote"`
 }
 
-// ViewNotesResult represents the prime_viewNotes response.
+// ViewNotesResult represents the mersennet_viewNotes response.
 type ViewNotesResult struct {
-	GrantID                string           `json:"grantId"`
-	GrantorCommitment      string           `json:"grantorCommitment"`
-	BlockNumber            uint64           `json:"blockNumber"`
-	ShieldedStateRoot      string           `json:"shieldedStateRoot"`
-	TotalEncryptedNoteCount int             `json:"totalEncryptedNoteCount"`
-	ReturnedEncryptedNoteCount int          `json:"returnedEncryptedNoteCount"`
-	NextCursor             *string          `json:"nextCursor"`
-	Notes                  []ViewNotesEntry `json:"notes"`
-	SignatureVerified      bool             `json:"signatureVerified"`
+	GrantID                    string           `json:"grantId"`
+	GrantorCommitment          string           `json:"grantorCommitment"`
+	BlockNumber                uint64           `json:"blockNumber"`
+	ShieldedStateRoot          string           `json:"shieldedStateRoot"`
+	TotalEncryptedNoteCount    int              `json:"totalEncryptedNoteCount"`
+	ReturnedEncryptedNoteCount int              `json:"returnedEncryptedNoteCount"`
+	NextCursor                 *string          `json:"nextCursor"`
+	Notes                      []ViewNotesEntry `json:"notes"`
+	SignatureVerified          bool             `json:"signatureVerified"`
 }

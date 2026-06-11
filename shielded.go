@@ -54,18 +54,18 @@ type GrantedDecryptedNote struct {
 	Note           ShieldedNote
 }
 
-// GrantedNoteScanResult is the aggregated result of scanning prime_viewNotes pages.
+// GrantedNoteScanResult is the aggregated result of scanning mersennet_viewNotes pages.
 type GrantedNoteScanResult struct {
-	GrantID                string
-	BlockNumber            uint64
-	TotalEncryptedNoteCount int
+	GrantID                   string
+	BlockNumber               uint64
+	TotalEncryptedNoteCount   int
 	FetchedEncryptedNoteCount int
-	NextCursor             string
-	SkippedMalformedCount  int
-	Notes                  []GrantedDecryptedNote
+	NextCursor                string
+	SkippedMalformedCount     int
+	Notes                     []GrantedDecryptedNote
 }
 
-// ParseEncryptedNotePayload decodes the bincode-encoded EncryptedNote envelope returned by prime_viewNotes.
+// ParseEncryptedNotePayload decodes the bincode-encoded EncryptedNote envelope returned by mersennet_viewNotes.
 func ParseEncryptedNotePayload(payloadHex string) (*EncryptedNoteEnvelope, error) {
 	payload, err := decodeHexBytes(payloadHex)
 	if err != nil {
@@ -123,7 +123,7 @@ func ParseShieldedNotePlaintext(plaintext []byte) (*ShieldedNote, error) {
 	}, nil
 }
 
-// ScanGrantedNotes pages through prime_viewNotes and locally decrypts matching note envelopes.
+// ScanGrantedNotes pages through mersennet_viewNotes and locally decrypts matching note envelopes.
 func ScanGrantedNotes(provider *Provider, material GrantedViewingMaterial, opts *GrantedNoteScanOptions) (*GrantedNoteScanResult, error) {
 	if material.Decrypt == nil {
 		return nil, fmt.Errorf("granted viewing material must provide a decrypt function")

@@ -5,7 +5,7 @@ Go client for Mersennet - JSON-RPC and CLOB (order book) operations.
 ## Installation
 
 ```bash
-go get github.com/PrimeNumbersLabs/prime-chain-sdk-go
+go get github.com/Mersennet/sdk-go
 ```
 
 ## Quick Start
@@ -17,7 +17,7 @@ import (
     "fmt"
     "log"
 
-    mersennet "github.com/PrimeNumbersLabs/prime-chain-sdk-go"
+    mersennet "github.com/Mersennet/sdk-go"
 )
 
 func main() {
