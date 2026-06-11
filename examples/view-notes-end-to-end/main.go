@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	mersennet "github.com/Mersennet/mersennet-chain-sdk-go"
+	mersennet "github.com/mersennet/sdk-go"
 )
 
 const (
