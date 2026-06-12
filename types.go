@@ -1,18 +1,20 @@
 package mersennet
 
-// Block represents block data from eth_getBlockByNumber / eth_getBlockByHash
+// Block represents block data from eth_getBlockByNumber / eth_getBlockByHash.
+// JSON tags match the camelCase field names emitted by the node's BlockDto.
 type Block struct {
 	Number       string        `json:"number"`
 	Hash         string        `json:"hash"`
-	GasLimit     string        `json:"gas_limit"`
-	GasUsed      string        `json:"gas_used"`
-	BaseFee      string        `json:"base_fee"`
-	StateRoot    string        `json:"state_root"`
+	GasLimit     string        `json:"gasLimit"`
+	GasUsed      string        `json:"gasUsed"`
+	BaseFee      string        `json:"baseFeePerGas"`
+	StateRoot    string        `json:"stateRoot"`
 	Transactions []interface{} `json:"transactions"`
-	DomainEvents []interface{} `json:"domain_events,omitempty"`
+	DomainEvents []interface{} `json:"domainEvents,omitempty"`
 }
 
-// Transaction represents transaction data
+// Transaction represents transaction data.
+// JSON tags match the camelCase field names emitted by the node's TxDto.
 type Transaction struct {
 	Hash     string  `json:"hash"`
 	From     string  `json:"from"`
@@ -20,33 +22,41 @@ type Transaction struct {
 	Value    string  `json:"value"`
 	Nonce    string  `json:"nonce"`
 	Gas      string  `json:"gas"`
-	GasPrice string  `json:"gas_price"`
+	GasPrice string  `json:"gasPrice"`
 	Input    string  `json:"input"`
 }
 
-// Receipt represents a transaction receipt
+// Receipt represents a transaction receipt.
+// JSON tags match the camelCase field names emitted by the node's ReceiptDto.
 type Receipt struct {
-	TransactionHash  string     `json:"transaction_hash"`
-	BlockHash        string     `json:"block_hash"`
-	BlockNumber      string     `json:"block_number"`
-	TransactionIndex string     `json:"transaction_index"`
-	GasUsed          string     `json:"gas_used"`
-	Status           string     `json:"status"`
-	ContractAddress  *string    `json:"contract_address"`
-	Output           string     `json:"output"`
-	Logs             []LogEntry `json:"logs"`
+	TransactionHash   string     `json:"transactionHash"`
+	BlockHash         string     `json:"blockHash"`
+	BlockNumber       string     `json:"blockNumber"`
+	TransactionIndex  string     `json:"transactionIndex"`
+	From              string     `json:"from"`
+	To                *string    `json:"to"`
+	GasUsed           string     `json:"gasUsed"`
+	CumulativeGasUsed string     `json:"cumulativeGasUsed"`
+	EffectiveGasPrice string     `json:"effectiveGasPrice"`
+	Status            string     `json:"status"`
+	ContractAddress   *string    `json:"contractAddress"`
+	LogsBloom         string     `json:"logsBloom"`
+	Type              string     `json:"type"`
+	Logs              []LogEntry `json:"logs"`
 }
 
-// LogEntry represents a log entry
+// LogEntry represents a log entry.
+// JSON tags match the camelCase field names emitted by the node's LogDto.
 type LogEntry struct {
 	Address          string   `json:"address"`
 	Topics           []string `json:"topics"`
 	Data             string   `json:"data"`
-	BlockNumber      string   `json:"block_number"`
-	BlockHash        string   `json:"block_hash"`
-	TransactionHash  string   `json:"transaction_hash"`
-	TransactionIndex string   `json:"transaction_index"`
-	LogIndex         string   `json:"log_index"`
+	BlockNumber      string   `json:"blockNumber"`
+	BlockHash        string   `json:"blockHash"`
+	TransactionHash  string   `json:"transactionHash"`
+	TransactionIndex string   `json:"transactionIndex"`
+	LogIndex         string   `json:"logIndex"`
+	Removed          bool     `json:"removed"`
 }
 
 // Order represents an order in the order book

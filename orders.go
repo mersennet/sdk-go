@@ -3,6 +3,7 @@ package mersennet
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 )
 
 // Orders provides CLOB interaction for Mersennet
@@ -15,11 +16,18 @@ func NewOrders(provider *Provider) *Orders {
 	return &Orders{provider: provider}
 }
 
+// toHexAmount normalizes a decimal (or already-hex) amount string to a
+// 0x-prefixed hex string, mirroring the TS SDK's toHexAmount. Non-numeric
+// input falls back to "0x0".
 func toHexAmount(s string) string {
 	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
 		return s
 	}
-	return fmt.Sprintf("0x%x", 0) // placeholder - use proper big.Int for production
+	n, ok := new(big.Int).SetString(s, 10)
+	if !ok {
+		return "0x0"
+	}
+	return "0x" + n.Text(16)
 }
 
 // AddMarket adds a new market (admin). Returns market ID.
