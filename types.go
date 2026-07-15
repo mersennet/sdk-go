@@ -110,3 +110,57 @@ type ViewNotesResult struct {
 	Notes                      []ViewNotesEntry `json:"notes"`
 	SignatureVerified          bool             `json:"signatureVerified"`
 }
+
+// ViewBalancesResult is the mersennet_viewBalances response: an encrypted-note
+// page plus the spent-nullifier set for client-side balance reconstruction.
+type ViewBalancesResult struct {
+	GrantID                    string           `json:"grantId"`
+	GrantorCommitment          string           `json:"grantorCommitment"`
+	BlockNumber                uint64           `json:"blockNumber"`
+	ShieldedStateRoot          string           `json:"shieldedStateRoot"`
+	TotalEncryptedNoteCount    int              `json:"totalEncryptedNoteCount"`
+	ReturnedEncryptedNoteCount int              `json:"returnedEncryptedNoteCount"`
+	NextCursor                 *string          `json:"nextCursor"`
+	Notes                      []ViewNotesEntry `json:"notes"`
+	SpentNullifiers            []string         `json:"spentNullifiers"`
+	SpentNullifierCount        int              `json:"spentNullifierCount"`
+	Reconstruction             string           `json:"reconstruction"`
+	SignatureVerified          bool             `json:"signatureVerified"`
+}
+
+// ViewMarketAggregate is one public per-market aggregate in a trading view read.
+type ViewMarketAggregate struct {
+	MarketID          int    `json:"marketId"`
+	MarkPrice         string `json:"markPrice"`
+	LongOpenInterest  string `json:"longOpenInterest"`
+	ShortOpenInterest string `json:"shortOpenInterest"`
+	LastClearingPrice string `json:"lastClearingPrice"`
+	LastVolume        string `json:"lastVolume"`
+	LiquidatableCount int    `json:"liquidatableCount"`
+}
+
+// ViewTradingResult is the mersennet_viewPositions / mersennet_viewOrders
+// response: public market context + grant binding only (rows reconstructed
+// client-side).
+type ViewTradingResult struct {
+	GrantID           string `json:"grantId"`
+	GrantorCommitment string `json:"grantorCommitment"`
+	BlockNumber       uint64 `json:"blockNumber"`
+	ShieldedStateRoot string `json:"shieldedStateRoot"`
+	MarketAggregates  struct {
+		Markets []ViewMarketAggregate `json:"markets"`
+	} `json:"marketAggregates"`
+	Reconstruction    string `json:"reconstruction"`
+	SignatureVerified bool   `json:"signatureVerified"`
+}
+
+// ViewGrantStatus is the mersennet_viewGrantStatus response.
+type ViewGrantStatus struct {
+	Exists            bool                   `json:"exists"`
+	Status            string                 `json:"status"`
+	ActiveNow         bool                   `json:"activeNow"`
+	SignatureVerified bool                   `json:"signatureVerified"`
+	Revoked           bool                   `json:"revoked"`
+	RevokedAtBlock    *uint64                `json:"revokedAtBlock"`
+	GrantToken        map[string]interface{} `json:"grantToken"`
+}
