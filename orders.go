@@ -2,9 +2,20 @@ package mersennet
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 )
+
+// ErrSignedOrderRequired is returned by the mutating order methods. Orders are
+// now signed transactions to the CLOB precompile
+// (0x0000000000000000000000000000000000000100); the unsigned owner-field RPC
+// was removed for security (it let anyone trade as anyone). Build the
+// placeOrder/cancelOrder/depositCollateral call, sign it, and submit via
+// Provider.SendRawTransaction. Native Go signing helpers are a tracked
+// follow-up; the TypeScript SDK is the reference implementation.
+var ErrSignedOrderRequired = errors.New(
+	"orders must be signed txs to the CLOB precompile (0x…0100) and submitted via SendRawTransaction; the unsigned RPC was removed")
 
 // Orders provides CLOB interaction for Mersennet
 type Orders struct {
@@ -52,40 +63,17 @@ func (o *Orders) AddMarket(base, quote, lot, tick string) (uint64, error) {
 	return n, nil
 }
 
-// PlaceOrder places an order
+// PlaceOrder is deprecated: orders are signed txs to the CLOB precompile.
+// See ErrSignedOrderRequired. Build the placeOrder call, sign it, and submit
+// via Provider.SendRawTransaction.
 func (o *Orders) PlaceOrder(market uint64, side, price, amount, tif, owner string) (map[string]interface{}, error) {
-	params := map[string]interface{}{
-		"owner":     owner,
-		"market_id": market,
-		"side":      side,
-		"price":     toHexAmount(price),
-		"size":      toHexAmount(amount),
-		"tif":       tif,
-	}
-	result, err := o.provider.request("mersennet_orders_submitOrder", []interface{}{params})
-	if err != nil {
-		return nil, err
-	}
-	var m map[string]interface{}
-	if err := json.Unmarshal(result, &m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return nil, ErrSignedOrderRequired
 }
 
-// CancelOrder cancels an order by ID
+// CancelOrder is deprecated: cancels are signed txs to the CLOB precompile
+// (the chain enforces order ownership). See ErrSignedOrderRequired.
 func (o *Orders) CancelOrder(orderID uint64) (bool, error) {
-	result, err := o.provider.request("mersennet_orders_cancelOrder", []interface{}{
-		fmt.Sprintf("0x%x", orderID),
-	})
-	if err != nil {
-		return false, err
-	}
-	var b bool
-	if err := json.Unmarshal(result, &b); err != nil {
-		return false, err
-	}
-	return b, nil
+	return false, ErrSignedOrderRequired
 }
 
 // GetOrderBook returns the order book for a market
