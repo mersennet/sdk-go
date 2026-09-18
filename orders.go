@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 )
 
@@ -92,4 +93,94 @@ func (o *Orders) GetOrderBook(market uint64) (*OrderBook, error) {
 		return nil, err
 	}
 	return &book, nil
+}
+
+// Market is a listed market as reported by mersennet_orders_getMarkets.
+// PriceScale: on-chain price = human price × PriceScale (1 = integer prices).
+type Market struct {
+	ID         uint64 `json:"id"`
+	Symbol     string `json:"symbol"`
+	TickSize   string `json:"tickSize"`
+	LotSize    string `json:"lotSize"`
+	LastPrice  string `json:"lastPrice"`
+	PriceScale uint64 `json:"priceScale"`
+	Status     string `json:"status"`
+}
+
+// GetMarkets lists the markets with tick/lot sizes and price scales.
+func (o *Orders) GetMarkets() ([]Market, error) {
+	result, err := o.provider.request("mersennet_orders_getMarkets", []interface{}{})
+	if err != nil {
+		return nil, err
+	}
+	var out []Market
+	if err := json.Unmarshal(result, &out); err != nil {
+		return nil, err
+	}
+	for i := range out {
+		if out[i].PriceScale == 0 {
+			out[i].PriceScale = 1
+		}
+	}
+	return out, nil
+}
+
+// GetProtocol returns every CLOB consensus switch and live parameter
+// (mersennet_orders_getProtocol): margin bps, wei per collateral unit,
+// insurance fund, bad debt, market price scales.
+func (o *Orders) GetProtocol() (map[string]interface{}, error) {
+	result, err := o.provider.request("mersennet_orders_getProtocol", []interface{}{})
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(result, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// GetAgents returns the agent keys granted by owner and whether delegation is active.
+func (o *Orders) GetAgents(owner string) (map[string]interface{}, error) {
+	result, err := o.provider.request("mersennet_orders_getAgents", []interface{}{owner})
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(result, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// GetLiquidatable returns the accounts below maintenance margin at the head
+// (keeper feed; empty before the settlement switch).
+func (o *Orders) GetLiquidatable() ([]string, error) {
+	result, err := o.provider.request("mersennet_orders_getLiquidatable", []interface{}{})
+	if err != nil {
+		return nil, err
+	}
+	var r struct {
+		Accounts []string `json:"accounts"`
+	}
+	if err := json.Unmarshal(result, &r); err != nil {
+		return nil, err
+	}
+	return r.Accounts, nil
+}
+
+// ToChainPrice converts a human price to on-chain units for a market.
+func ToChainPrice(human float64, priceScale uint64) uint64 {
+	if priceScale == 0 {
+		priceScale = 1
+	}
+	return uint64(math.Round(human * float64(priceScale)))
+}
+
+// ToHumanPrice converts an on-chain price to a human price for a market.
+func ToHumanPrice(chain uint64, priceScale uint64) float64 {
+	if priceScale == 0 {
+		priceScale = 1
+	}
+	return float64(chain) / float64(priceScale)
 }
