@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strings"
 )
 
 // ErrSignedOrderRequired is returned by the mutating order methods. Orders are
@@ -138,6 +139,41 @@ func (o *Orders) GetProtocol() (map[string]interface{}, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+// CollateralUnitsPerMRSN returns the collateral units that make up one MRSN in
+// the current era: 10^18 before the settlement switch (a unit was one wei) and
+// 1 from it (a unit is one MRSN), read from getProtocol().weiPerCollateralUnit.
+func (o *Orders) CollateralUnitsPerMRSN() (*big.Int, error) {
+	p, err := o.GetProtocol()
+	if err != nil {
+		return nil, err
+	}
+	wei := big.NewInt(1)
+	if raw, ok := p["weiPerCollateralUnit"].(string); ok && raw != "" {
+		if v, ok := new(big.Int).SetString(strings.TrimPrefix(raw, "0x"), 16); ok && v.Sign() > 0 {
+			wei = v
+		}
+	}
+	one := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
+	return new(big.Int).Quo(one, wei), nil
+}
+
+// ToCollateralUnits converts a human MRSN amount ("10.5") to integer
+// collateral units for the current era (floor). Pass the result to
+// depositCollateral/withdrawCollateral calldata.
+func (o *Orders) ToCollateralUnits(mrsn string) (*big.Int, error) {
+	r, ok := new(big.Rat).SetString(strings.TrimSpace(mrsn))
+	if !ok || r.Sign() <= 0 {
+		return nil, fmt.Errorf("invalid MRSN amount: %q", mrsn)
+	}
+	one := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
+	wei := new(big.Int).Quo(new(big.Int).Mul(r.Num(), one), r.Denom())
+	per, err := o.CollateralUnitsPerMRSN()
+	if err != nil {
+		return nil, err
+	}
+	return new(big.Int).Quo(wei, new(big.Int).Quo(one, per)), nil
 }
 
 // GetAgents returns the agent keys granted by owner and whether delegation is active.
