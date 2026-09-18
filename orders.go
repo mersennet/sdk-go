@@ -2,8 +2,21 @@ package mersennet
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
+	"math/big"
 )
+
+// ErrSignedOrderRequired is returned by the mutating order methods. Orders are
+// now signed transactions to the CLOB precompile
+// (0x0000000000000000000000000000000000000100); the unsigned owner-field RPC
+// was removed for security (it let anyone trade as anyone). Build the
+// placeOrder/cancelOrder/depositCollateral call, sign it, and submit via
+// Provider.SendRawTransaction. Native Go signing helpers are a tracked
+// follow-up; the TypeScript SDK is the reference implementation.
+var ErrSignedOrderRequired = errors.New(
+	"orders must be signed txs to the CLOB precompile (0x…0100) and submitted via SendRawTransaction; the unsigned RPC was removed")
 
 // Orders provides CLOB interaction for Mersennet
 type Orders struct {
@@ -15,11 +28,18 @@ func NewOrders(provider *Provider) *Orders {
 	return &Orders{provider: provider}
 }
 
+// toHexAmount normalizes a decimal (or already-hex) amount string to a
+// 0x-prefixed hex string, mirroring the TS SDK's toHexAmount. Non-numeric
+// input falls back to "0x0".
 func toHexAmount(s string) string {
 	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
 		return s
 	}
-	return fmt.Sprintf("0x%x", 0) // placeholder - use proper big.Int for production
+	n, ok := new(big.Int).SetString(s, 10)
+	if !ok {
+		return "0x0"
+	}
+	return "0x" + n.Text(16)
 }
 
 // AddMarket adds a new market (admin). Returns market ID.
@@ -44,40 +64,17 @@ func (o *Orders) AddMarket(base, quote, lot, tick string) (uint64, error) {
 	return n, nil
 }
 
-// PlaceOrder places an order
+// PlaceOrder is deprecated: orders are signed txs to the CLOB precompile.
+// See ErrSignedOrderRequired. Build the placeOrder call, sign it, and submit
+// via Provider.SendRawTransaction.
 func (o *Orders) PlaceOrder(market uint64, side, price, amount, tif, owner string) (map[string]interface{}, error) {
-	params := map[string]interface{}{
-		"owner":     owner,
-		"market_id": market,
-		"side":      side,
-		"price":     toHexAmount(price),
-		"size":      toHexAmount(amount),
-		"tif":       tif,
-	}
-	result, err := o.provider.request("mersennet_orders_submitOrder", []interface{}{params})
-	if err != nil {
-		return nil, err
-	}
-	var m map[string]interface{}
-	if err := json.Unmarshal(result, &m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return nil, ErrSignedOrderRequired
 }
 
-// CancelOrder cancels an order by ID
+// CancelOrder is deprecated: cancels are signed txs to the CLOB precompile
+// (the chain enforces order ownership). See ErrSignedOrderRequired.
 func (o *Orders) CancelOrder(orderID uint64) (bool, error) {
-	result, err := o.provider.request("mersennet_orders_cancelOrder", []interface{}{
-		fmt.Sprintf("0x%x", orderID),
-	})
-	if err != nil {
-		return false, err
-	}
-	var b bool
-	if err := json.Unmarshal(result, &b); err != nil {
-		return false, err
-	}
-	return b, nil
+	return false, ErrSignedOrderRequired
 }
 
 // GetOrderBook returns the order book for a market
@@ -96,4 +93,94 @@ func (o *Orders) GetOrderBook(market uint64) (*OrderBook, error) {
 		return nil, err
 	}
 	return &book, nil
+}
+
+// Market is a listed market as reported by mersennet_orders_getMarkets.
+// PriceScale: on-chain price = human price × PriceScale (1 = integer prices).
+type Market struct {
+	ID         uint64 `json:"id"`
+	Symbol     string `json:"symbol"`
+	TickSize   string `json:"tickSize"`
+	LotSize    string `json:"lotSize"`
+	LastPrice  string `json:"lastPrice"`
+	PriceScale uint64 `json:"priceScale"`
+	Status     string `json:"status"`
+}
+
+// GetMarkets lists the markets with tick/lot sizes and price scales.
+func (o *Orders) GetMarkets() ([]Market, error) {
+	result, err := o.provider.request("mersennet_orders_getMarkets", []interface{}{})
+	if err != nil {
+		return nil, err
+	}
+	var out []Market
+	if err := json.Unmarshal(result, &out); err != nil {
+		return nil, err
+	}
+	for i := range out {
+		if out[i].PriceScale == 0 {
+			out[i].PriceScale = 1
+		}
+	}
+	return out, nil
+}
+
+// GetProtocol returns every CLOB consensus switch and live parameter
+// (mersennet_orders_getProtocol): margin bps, wei per collateral unit,
+// insurance fund, bad debt, market price scales.
+func (o *Orders) GetProtocol() (map[string]interface{}, error) {
+	result, err := o.provider.request("mersennet_orders_getProtocol", []interface{}{})
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(result, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// GetAgents returns the agent keys granted by owner and whether delegation is active.
+func (o *Orders) GetAgents(owner string) (map[string]interface{}, error) {
+	result, err := o.provider.request("mersennet_orders_getAgents", []interface{}{owner})
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(result, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// GetLiquidatable returns the accounts below maintenance margin at the head
+// (keeper feed; empty before the settlement switch).
+func (o *Orders) GetLiquidatable() ([]string, error) {
+	result, err := o.provider.request("mersennet_orders_getLiquidatable", []interface{}{})
+	if err != nil {
+		return nil, err
+	}
+	var r struct {
+		Accounts []string `json:"accounts"`
+	}
+	if err := json.Unmarshal(result, &r); err != nil {
+		return nil, err
+	}
+	return r.Accounts, nil
+}
+
+// ToChainPrice converts a human price to on-chain units for a market.
+func ToChainPrice(human float64, priceScale uint64) uint64 {
+	if priceScale == 0 {
+		priceScale = 1
+	}
+	return uint64(math.Round(human * float64(priceScale)))
+}
+
+// ToHumanPrice converts an on-chain price to a human price for a market.
+func ToHumanPrice(chain uint64, priceScale uint64) float64 {
+	if priceScale == 0 {
+		priceScale = 1
+	}
+	return float64(chain) / float64(priceScale)
 }

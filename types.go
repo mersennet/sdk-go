@@ -1,18 +1,20 @@
 package mersennet
 
-// Block represents block data from eth_getBlockByNumber / eth_getBlockByHash
+// Block represents block data from eth_getBlockByNumber / eth_getBlockByHash.
+// JSON tags match the camelCase field names emitted by the node's BlockDto.
 type Block struct {
 	Number       string        `json:"number"`
 	Hash         string        `json:"hash"`
-	GasLimit     string        `json:"gas_limit"`
-	GasUsed      string        `json:"gas_used"`
-	BaseFee      string        `json:"base_fee"`
-	StateRoot    string        `json:"state_root"`
+	GasLimit     string        `json:"gasLimit"`
+	GasUsed      string        `json:"gasUsed"`
+	BaseFee      string        `json:"baseFeePerGas"`
+	StateRoot    string        `json:"stateRoot"`
 	Transactions []interface{} `json:"transactions"`
-	DomainEvents []interface{} `json:"domain_events,omitempty"`
+	DomainEvents []interface{} `json:"domainEvents,omitempty"`
 }
 
-// Transaction represents transaction data
+// Transaction represents transaction data.
+// JSON tags match the camelCase field names emitted by the node's TxDto.
 type Transaction struct {
 	Hash     string  `json:"hash"`
 	From     string  `json:"from"`
@@ -20,33 +22,41 @@ type Transaction struct {
 	Value    string  `json:"value"`
 	Nonce    string  `json:"nonce"`
 	Gas      string  `json:"gas"`
-	GasPrice string  `json:"gas_price"`
+	GasPrice string  `json:"gasPrice"`
 	Input    string  `json:"input"`
 }
 
-// Receipt represents a transaction receipt
+// Receipt represents a transaction receipt.
+// JSON tags match the camelCase field names emitted by the node's ReceiptDto.
 type Receipt struct {
-	TransactionHash  string     `json:"transaction_hash"`
-	BlockHash        string     `json:"block_hash"`
-	BlockNumber      string     `json:"block_number"`
-	TransactionIndex string     `json:"transaction_index"`
-	GasUsed          string     `json:"gas_used"`
-	Status           string     `json:"status"`
-	ContractAddress  *string    `json:"contract_address"`
-	Output           string     `json:"output"`
-	Logs             []LogEntry `json:"logs"`
+	TransactionHash   string     `json:"transactionHash"`
+	BlockHash         string     `json:"blockHash"`
+	BlockNumber       string     `json:"blockNumber"`
+	TransactionIndex  string     `json:"transactionIndex"`
+	From              string     `json:"from"`
+	To                *string    `json:"to"`
+	GasUsed           string     `json:"gasUsed"`
+	CumulativeGasUsed string     `json:"cumulativeGasUsed"`
+	EffectiveGasPrice string     `json:"effectiveGasPrice"`
+	Status            string     `json:"status"`
+	ContractAddress   *string    `json:"contractAddress"`
+	LogsBloom         string     `json:"logsBloom"`
+	Type              string     `json:"type"`
+	Logs              []LogEntry `json:"logs"`
 }
 
-// LogEntry represents a log entry
+// LogEntry represents a log entry.
+// JSON tags match the camelCase field names emitted by the node's LogDto.
 type LogEntry struct {
 	Address          string   `json:"address"`
 	Topics           []string `json:"topics"`
 	Data             string   `json:"data"`
-	BlockNumber      string   `json:"block_number"`
-	BlockHash        string   `json:"block_hash"`
-	TransactionHash  string   `json:"transaction_hash"`
-	TransactionIndex string   `json:"transaction_index"`
-	LogIndex         string   `json:"log_index"`
+	BlockNumber      string   `json:"blockNumber"`
+	BlockHash        string   `json:"blockHash"`
+	TransactionHash  string   `json:"transactionHash"`
+	TransactionIndex string   `json:"transactionIndex"`
+	LogIndex         string   `json:"logIndex"`
+	Removed          bool     `json:"removed"`
 }
 
 // Order represents an order in the order book
@@ -99,4 +109,58 @@ type ViewNotesResult struct {
 	NextCursor                 *string          `json:"nextCursor"`
 	Notes                      []ViewNotesEntry `json:"notes"`
 	SignatureVerified          bool             `json:"signatureVerified"`
+}
+
+// ViewBalancesResult is the mersennet_viewBalances response: an encrypted-note
+// page plus the spent-nullifier set for client-side balance reconstruction.
+type ViewBalancesResult struct {
+	GrantID                    string           `json:"grantId"`
+	GrantorCommitment          string           `json:"grantorCommitment"`
+	BlockNumber                uint64           `json:"blockNumber"`
+	ShieldedStateRoot          string           `json:"shieldedStateRoot"`
+	TotalEncryptedNoteCount    int              `json:"totalEncryptedNoteCount"`
+	ReturnedEncryptedNoteCount int              `json:"returnedEncryptedNoteCount"`
+	NextCursor                 *string          `json:"nextCursor"`
+	Notes                      []ViewNotesEntry `json:"notes"`
+	SpentNullifiers            []string         `json:"spentNullifiers"`
+	SpentNullifierCount        int              `json:"spentNullifierCount"`
+	Reconstruction             string           `json:"reconstruction"`
+	SignatureVerified          bool             `json:"signatureVerified"`
+}
+
+// ViewMarketAggregate is one public per-market aggregate in a trading view read.
+type ViewMarketAggregate struct {
+	MarketID          int    `json:"marketId"`
+	MarkPrice         string `json:"markPrice"`
+	LongOpenInterest  string `json:"longOpenInterest"`
+	ShortOpenInterest string `json:"shortOpenInterest"`
+	LastClearingPrice string `json:"lastClearingPrice"`
+	LastVolume        string `json:"lastVolume"`
+	LiquidatableCount int    `json:"liquidatableCount"`
+}
+
+// ViewTradingResult is the mersennet_viewPositions / mersennet_viewOrders
+// response: public market context + grant binding only (rows reconstructed
+// client-side).
+type ViewTradingResult struct {
+	GrantID           string `json:"grantId"`
+	GrantorCommitment string `json:"grantorCommitment"`
+	BlockNumber       uint64 `json:"blockNumber"`
+	ShieldedStateRoot string `json:"shieldedStateRoot"`
+	MarketAggregates  struct {
+		Markets []ViewMarketAggregate `json:"markets"`
+	} `json:"marketAggregates"`
+	Reconstruction    string `json:"reconstruction"`
+	SignatureVerified bool   `json:"signatureVerified"`
+}
+
+// ViewGrantStatus is the mersennet_viewGrantStatus response.
+type ViewGrantStatus struct {
+	Exists            bool                   `json:"exists"`
+	Status            string                 `json:"status"`
+	ActiveNow         bool                   `json:"activeNow"`
+	SignatureVerified bool                   `json:"signatureVerified"`
+	Revoked           bool                   `json:"revoked"`
+	RevokedAtBlock    *uint64                `json:"revokedAtBlock"`
+	GrantToken        map[string]interface{} `json:"grantToken"`
 }

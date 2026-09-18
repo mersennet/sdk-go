@@ -249,6 +249,84 @@ func (p *Provider) ViewNotes(grantID string, limit *int, cursorHex *string) (*Vi
 	return &out, nil
 }
 
+// ViewBalances returns a grant-gated (`balances:read`) page from
+// mersennet_viewBalances: the encrypted-note page plus the spent-nullifier
+// set. Pair with ReconstructPortfolio to derive spendable balances locally.
+func (p *Provider) ViewBalances(grantID string, limit *int, cursorHex *string) (*ViewBalancesResult, error) {
+	request := map[string]interface{}{"grantIdHex": grantID}
+	if limit != nil {
+		request["limit"] = *limit
+	}
+	if cursorHex != nil && *cursorHex != "" {
+		request["cursorHex"] = *cursorHex
+	}
+	result, err := p.request("mersennet_viewBalances", []interface{}{request})
+	if err != nil {
+		return nil, err
+	}
+	var out ViewBalancesResult
+	if err := json.Unmarshal(result, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ViewPositions returns the grant-gated (`positions:read`) public market
+// context + grant binding from mersennet_viewPositions. Pair with
+// ReconstructPositions over the wallet's local fill records.
+func (p *Provider) ViewPositions(grantID string) (*ViewTradingResult, error) {
+	return p.viewTrading("mersennet_viewPositions", grantID)
+}
+
+// ViewOrders returns the grant-gated (`orders:read`) public market context +
+// grant binding from mersennet_viewOrders. Pair with ReconstructOpenOrders
+// over the wallet's local order records.
+func (p *Provider) ViewOrders(grantID string) (*ViewTradingResult, error) {
+	return p.viewTrading("mersennet_viewOrders", grantID)
+}
+
+func (p *Provider) viewTrading(method, grantID string) (*ViewTradingResult, error) {
+	result, err := p.request(method, []interface{}{map[string]interface{}{"grantIdHex": grantID}})
+	if err != nil {
+		return nil, err
+	}
+	var out ViewTradingResult
+	if err := json.Unmarshal(result, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ViewGrantStatus returns the lifecycle/status of a viewing grant.
+func (p *Provider) ViewGrantStatus(grantID string) (*ViewGrantStatus, error) {
+	result, err := p.request("mersennet_viewGrantStatus", []interface{}{map[string]interface{}{"grantIdHex": grantID}})
+	if err != nil {
+		return nil, err
+	}
+	var out ViewGrantStatus
+	if err := json.Unmarshal(result, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetCodeAttestation returns the on-chain code-publication attestation for a
+// contract, or nil if unpublished.
+func (p *Provider) GetCodeAttestation(address string) (map[string]interface{}, error) {
+	result, err := p.request("mersennet_getCodeAttestation", []interface{}{address})
+	if err != nil {
+		return nil, err
+	}
+	if bytes.Equal(result, []byte("null")) {
+		return nil, nil
+	}
+	var out map[string]interface{}
+	if err := json.Unmarshal(result, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GasPrice returns the current gas price
 func (p *Provider) GasPrice() (string, error) {
 	result, err := p.request("eth_gasPrice", nil)
