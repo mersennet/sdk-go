@@ -12,7 +12,7 @@ Go client for Mersennet - JSON-RPC and CLOB (order book) operations.
 ## Installation
 
 ```bash
-go get github.com/mersennet/sdk-go@main
+go get github.com/mersennet/sdk-go@latest
 ```
 
 ## Quick Start
