@@ -100,3 +100,7 @@ fmt.Println("Decrypted notes:", len(result.Notes))
 ```
 
 See the runnable end-to-end example in [examples/view-notes-end-to-end/main.go](examples/view-notes-end-to-end/main.go).
+
+## License
+
+MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Mersennet Foundation. Security reports: security@mersennet.com ([SECURITY.md](SECURITY.md)).
