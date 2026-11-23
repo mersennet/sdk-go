@@ -3,15 +3,20 @@ package mersennet
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 )
 
-// MersennetError represents an RPC or SDK error
+// MersennetError represents an RPC or SDK error. Code and Data are the
+// node's JSON-RPC error.code / error.data: a reverted eth_call or
+// eth_estimateGas is code 3 with the revert bytes (a hex string) in Data, as
+// on geth. Data is nil when the node sends none.
 type MersennetError struct {
 	Message string
 	Code    int
+	Data    json.RawMessage
 }
 
 func (e *MersennetError) Error() string {
@@ -41,8 +46,9 @@ type rpcResponse struct {
 	ID      int             `json:"id"`
 	Result  json.RawMessage `json:"result"`
 	Error   *struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
+		Code    int             `json:"code"`
+		Message string          `json:"message"`
+		Data    json.RawMessage `json:"data,omitempty"`
 	} `json:"error,omitempty"`
 }
 
@@ -75,6 +81,7 @@ func (p *Provider) request(method string, params []interface{}) (json.RawMessage
 		return nil, &MersennetError{
 			Message: rpcResp.Error.Message,
 			Code:    rpcResp.Error.Code,
+			Data:    rpcResp.Error.Data,
 		}
 	}
 	return rpcResp.Result, nil
@@ -180,7 +187,23 @@ func (p *Provider) SendRawTransaction(rawTx string) (string, error) {
 	return s, nil
 }
 
-// Call performs eth_call
+// RevertData returns the revert bytes (hex) of a reverted eth_call or
+// eth_estimateGas: the data of a JSON-RPC error 3. ok is false for any other
+// error.
+func RevertData(err error) (data string, ok bool) {
+	var me *MersennetError
+	if !errors.As(err, &me) || me.Code != 3 || len(me.Data) == 0 {
+		return "", false
+	}
+	if json.Unmarshal(me.Data, &data) != nil {
+		return "", false
+	}
+	return data, true
+}
+
+// Call performs eth_call. A reverted call returns a *MersennetError with
+// Code 3 and the revert bytes in Data (see RevertData); nodes before the
+// eth_call-errors release returned the revert bytes as the result instead.
 func (p *Provider) Call(txObject map[string]interface{}) (string, error) {
 	result, err := p.request("eth_call", []interface{}{txObject})
 	if err != nil {
